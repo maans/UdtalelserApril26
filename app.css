@@ -1002,26 +1002,62 @@ textarea:focus,input:focus,select:focus,button:focus-visible{
 @media print{.printOverlay{display:none!important}}
 
 
-/* v2.7: Print-sikkert logo uden img/canvas. iPad/Safari bevarer inline SVG i PDF. */
-.printSvgLogo{
-  width: 74px;
-  height: 74px;
-  margin: 0 auto 8px auto;
-  display: block;
-  line-height: 0;
-}
-.printSvgLogo svg{
-  width: 74px;
-  height: 74px;
-  display: block;
-}
-@media print{
-  .printSvgLogo,
-  .printSvgLogo svg{
-    display:block !important;
-    visibility:visible !important;
-    opacity:1 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+/* v2.9: stabil print uden SVG-hack */
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .printOverlay,
+  .printOverlayInner,
+  #printOverlay,
+  #printFrame {
+    overflow: visible !important;
+  }
+
+  .printOverlayBar,
+  .printOverlayToolbar,
+  .printOverlayHeader,
+  .printOverlay .btn,
+  .printOverlay button,
+  #btnClosePrint,
+  #btnPrintAgain {
+    display: none !important;
+  }
+
+  .printPage,
+  .print-page,
+  article.printPage,
+  article.print-page {
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .printPage:last-child,
+  .print-page:last-child,
+  article.printPage:last-child,
+  article.print-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .printSignature,
+  .signature,
+  .signatures {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Lad ikke logoet skabe en tom side. Hvis Safari dropper billedet, bevares pladsen ikke urimeligt. */
+  .printLogo,
+  .print-header-logo {
+    max-width: 78px !important;
+    max-height: 78px !important;
   }
 }
