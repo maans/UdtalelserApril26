@@ -12,6 +12,8 @@ function resolveFullName(row) {
 (() => {
   'use strict';
 
+const PRINT_INLINE_SVG_LOGO = "<div class=\"printSvgLogo\" aria-label=\"Himmerlands Efterskole logo\">\n  <svg viewBox=\"0 0 220 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\">\n    <circle cx=\"110\" cy=\"110\" r=\"103\" fill=\"white\" stroke=\"#111827\" stroke-width=\"7\"/>\n    <circle cx=\"110\" cy=\"110\" r=\"74\" fill=\"white\" stroke=\"#111827\" stroke-width=\"6\"/>\n    <text x=\"110\" y=\"36\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"24\" font-weight=\"800\" fill=\"#111827\">HIMMERLANDS</text>\n    <text x=\"110\" y=\"198\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"23\" font-weight=\"800\" fill=\"#111827\">EFTERSKOLE</text>\n    <text x=\"110\" y=\"79\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"22\" font-weight=\"700\" fill=\"#111827\">1920</text>\n    <circle cx=\"24\" cy=\"110\" r=\"7\" fill=\"#111827\"/>\n    <circle cx=\"196\" cy=\"110\" r=\"7\" fill=\"#111827\"/>\n    <path d=\"M58 119 C75 101, 145 101, 162 119\" fill=\"none\" stroke=\"#111827\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n    <path d=\"M70 116 L70 144 M150 116 L150 144\" stroke=\"#111827\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n    <path d=\"M64 142 C85 132, 135 132, 156 142\" fill=\"none\" stroke=\"#111827\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n    <rect x=\"84\" y=\"112\" width=\"52\" height=\"26\" rx=\"4\" fill=\"none\" stroke=\"#111827\" stroke-width=\"5\"/>\n    <path d=\"M43 145 C62 147, 73 157, 78 177\" fill=\"none\" stroke=\"#111827\" stroke-width=\"5\"/>\n    <path d=\"M177 145 C158 147, 147 157, 142 177\" fill=\"none\" stroke=\"#111827\" stroke-width=\"5\"/>\n  </svg>\n</div>";
+
 // --- Embedded fallbacks for file:// usage (avoids CORS blocked fetch) ---
 const EMBEDDED_FILE_OVERRIDES = {"sang":{"schema":"hu-elevudtalelser-snippets-override@1","scope":"sang","author":"","createdAt":"2025-12-29","payload":{"sang":{"items":{"S1":{"label":"Sang – niveau 1","text":"{{FORNAVN}} har bidraget til fællessang på allerbedste vis. Med sangglæde, engagement og nysgerrighed har {{FORNAVN}} været en drivkraft i timerne og en inspiration for andre, så de har oplevet det fællesskab, som fællessang kan give."},"S2":{"label":"Sang – niveau 2","text":"{{FORNAVN}} har med godt humør bidraget til fællessang og kor og har derigennem vist sangglæde og åbenhed og fået kendskab til nye sange. {{FORNAVN}} har oplevet det fællesskab, som fællessang kan give."},"S3":{"label":"Sang – niveau 3","text":"{{FORNAVN}} har deltaget i fællessang og kor og har derigennem fået kendskab til nye sange og har oplevet det fællesskab, som fællessang kan give."}},"order":["S1","S2","S3"]}}},"gym":{"schema":"hu-elevudtalelser-snippets-override@1","scope":"gym","author":"","createdAt":"2025-12-29","payload":{"gym":{"variants":{"G1":{"label":"Meget engageret","text":"{{FORNAVN}} har udvist stor interesse for fællesgymnastik, opvisningerne og skolens fællesskab heri. {{FORNAVN}} har udvist stor glæde ved at være en del af, og inddrage andre i fællesskabet og har gennem sin energiske deltagelse i timerne og opvisningerne vist stort engagement, hvilket har virket som en stor drivkraft og motivator for skolens andre elever."},"G2":{"label":"Stabil deltagelse","text":"{{FORNAVN}} har udvist interesse for fællesgymnastik, opvisningerne og for at lære og dygtiggøre sig. {{FORNAVN}} har gennem sin deltagelse i timerne og opvisningerne bidraget positivt og meget aktivt til det store fællesskab."},"G3":{"label":"Varierende deltagelse","text":"{{FORNAVN}} har deltaget aktivt i fællesgymnastik og opvisninger. {{FORNAVN}} har lært alle skolens obligatoriske serier, hvilket har bidraget positivt til opvisningerne og fællesskabet."}},"variantOrder":["G1","G2","G3"],"roles":{"FANEBÆRER":{"label":"Fanebærer","text":"{{FORNAVN}} har været udtaget som en af skolens fanebærere til de fælles gymnastikopvisninger. Et hverv {(HAN_HUN)} fuldt ud har opfyldt, både ansvarsfuldt og respektfuldt. {{FORNAVN}} har som fanebærer repræsenteret skolen og dens værdier på fornemmeste vis."},"REDSKAB":{"label":"Redskabshold","text":"{{FORNAVN}} har været en del af redskabsholdet, som {(HAN_HUN)} frivilligt har meldt sig til. {(HAN_HUN_CAP)} har været en stor hjælp og ydet en kæmpe indsats for at lykkes med skolens opvisninger. {{FORNAVN}} har i den forbindelse vist stort initiativ og ansvar, samt evnen til at løse praktiske problemstillinger på egen hånd."},"DGI":{"label":"DGI-instruktør","text":"{{FORNAVN}} har deltaget aktivt i skolens frivillige samarbejde med Haubro IF, hvor {(HAN_HUN)} har trænet gymnastikholdet for skolebørnene, sideløbende med at {(HAN_HUN)} har taget DGI’s gymnastikuddannelse på skolen. {{FORNAVN}} har vist interesse og engagement for det frivillige foreningsarbejde, {(HAN_HUN)} har ydet en stor indsats i foreningens arbejde og taget det fornødne ansvar."}},"roleOrder":["FANEBÆRER","REDSKAB","DGI"]}}},"elevraad":{"schema":"hu-elevudtalelser-snippets-override@1","scope":"elevraad","author":"","createdAt":"2025-12-29","payload":{"elevraad":{"label":"Elevrådsrepræsentant","text":"{{ELEV_FORNAVN}} har været en del af elevrådet på Himmerlands Efterskole, hvor elevrådet blandt andet har stået for ugentlige fællesmøder for elever og lærere. Derudover har elevrådsarbejdet omfattet en række forskellige opgaver i løbet af året med ansvar for at sætte aktiviteter i gang i fællesskabets ånd. I den forbindelse har {{ELEV_FORNAVN}} vist engagement og vilje til at påtage sig og gennemføre forskellige opgaver og aktiviteter."}}},"templates":{"schema":"hu-elevudtalelser-snippets-override@1","scope":"templates","author":"MM","createdAt":"2026-01-04","payload":{"templates":{"forstanderNavn":"Stinne Krogh Poulsen","schoolText":"På Himmerlands Efterskole arbejder vi med både faglighed, fællesskab og personlig udvikling.\nUdtalelsen er skrevet med udgangspunkt i elevens hverdag og deltagelse gennem skoleåret.","template":"Udtalelse vedrørende {{ELEV_FULDE_NAVN}}\n\n{{ELEV_FORNAVN}} {{ELEV_EFTERNAVN}} har været elev på Himmerlands Efterskole i perioden fra {{PERIODE_FRA}} til {{PERIODE_TIL}} i {{ELEV_KLASSE}}.\n\nHimmerlands Efterskole er en traditionsrig efterskole, som prioriterer fællesskabet og faglig fordybelse højt. Elevernes hverdag er præget af frie rammer og mange muligheder. Vi møder eleverne med tillid, positive forventninger og faglige udfordringer. I løbet af et efterskoleår på Himmerlands Efterskole er oplevelserne mange og udfordringerne ligeså. Det gælder i hverdagens almindelige undervisning, som fordeler sig over boglige fag, fællesfag og profilfag. Det gælder også alle de dage, hvor hverdagen ændres til fordel for temauger, studieture mm. \n\n{{ELEV_UDVIKLING_AFSNIT}}\n{{ELEVRAAD_AFSNIT}}\n{{ROLLE_AFSNIT}}\n\nSom en del af et efterskoleår på Himmerlands Efterskole deltager eleverne ugentligt i fællessang og fællesgymnastik. Begge fag udgør en del af efterskolelivet, hvor eleverne oplever nye sider af sig selv, flytter grænser og oplever, at deres bidrag til fællesskabet har betydning. I løbet af året optræder eleverne med fælleskor og gymnastikopvisninger.\n{{SANG_GYM_AFSNIT}}\n\nPå en efterskole er der mange praktiske opgaver. {{PRAKTISK_AFSNIT}}\n{{ELEV_FORNAVN}} har på Himmerlands Efterskole været en del af en kontaktgruppe på {{KONTAKTGRUPPE_ANTAL}} elever. I kontaktgruppen kender vi {{HAM_HENDE}} som {{KONTAKTGRUPPE_BESKRIVELSE}}.\n\nVi har været rigtig glade for at have {{ELEV_FORNAVN}} som elev på skolen og ønsker {{HAM_HENDE}} held og lykke fremover.\n\n\n\n{{KONTAKTLÆRER_1_NAVN}} & {{KONTAKTLÆRER_2_NAVN}}     {{FORSTANDER_NAVN}}\nKontaktlærere                                                           Forstander\n"}}}};
 const EMBEDDED_DEMO_STUDENTS_CSV = `Fornavn,Efternavn,Unilogin,Køn,Klasse,Kontaktlærer1,Kontaktlærer2,Initialer for k-lærer1,Initialer for k-lærer2
@@ -991,6 +993,7 @@ function openPrintPreviewOverlay(printHtml, title) {
       } catch(_) {}
       await new Promise(resolve => setTimeout(resolve, 500));
       w.focus();
+      forceInlineSvgLogoInDocument(w.document);
       w.print();
     } catch(e) {
       alert('Kunne ikke starte print fra previewet. Prøv “Print igen” eller genindlæs siden.');
@@ -1303,7 +1306,7 @@ async function printAllKStudents() {
     return;
   }
 
-  const title = isAll ? 'Udtalelser v2.6 – print K-gruppe' : 'Udtalelser v2.6 – print K-elever';
+  const title = isAll ? 'Udtalelser v2.7 – print K-gruppe' : 'Udtalelser v2.7 – print K-elever';
   const sorted = sortedStudents(list);
   await openPrintWindowForStudents(sorted, getSettings(), title);
 }
@@ -1365,7 +1368,7 @@ kGroups.forEach(g => {
     return;
   }
 
-  const title = 'Udtalelser v2.6 – print alle K-grupper';
+  const title = 'Udtalelser v2.7 – print alle K-grupper';
   // Brug samme printmotor som enkelt-elev / k-gruppe, så header (logo + dato) altid kommer med.
   // preserveOrder=true så vi ikke mister gruppe-ordenen ved intern sortering.
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
@@ -1391,7 +1394,7 @@ async function printAllStudents() {
     return coll.compare((a.efternavn || '').trim(), (b.efternavn || '').trim());
   });
 
-  const title = 'Udtalelser v2.6 – print alle elever';
+  const title = 'Udtalelser v2.7 – print alle elever';
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
 }
 
@@ -6088,3 +6091,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+/* v2.7 fallback: erstat evt. print-logo-billeder/canvas med inline SVG før print */
+function forceInlineSvgLogoInDocument(doc){
+  try{
+    if(!doc || !doc.body) return;
+    const existingSvg = doc.querySelector('.printSvgLogo');
+    if(existingSvg) return;
+    const brokenLogo = doc.querySelector('img.printLogo, img.print-header-logo, canvas.printLogoCanvas, .printLogoCanvas, .printLogo');
+    const title = Array.from(doc.querySelectorAll('h1,h2,h3,.printTitle,.title')).find(el => /Udtalelse vedrørende/i.test(el.textContent || ''));
+    const host = brokenLogo || title;
+    if(host){
+      const wrap = doc.createElement('div');
+      wrap.innerHTML = PRINT_INLINE_SVG_LOGO;
+      const node = wrap.firstElementChild;
+      if(brokenLogo){
+        brokenLogo.replaceWith(node);
+      }else{
+        title.parentNode.insertBefore(node, title);
+      }
+    }
+  }catch(e){}
+}
+

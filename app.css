@@ -1000,3 +1000,28 @@ textarea:focus,input:focus,select:focus,button:focus-visible{
   .printOverlayActions .btn{flex:1}
 }
 @media print{.printOverlay{display:none!important}}
+
+
+/* v2.7: Print-sikkert logo uden img/canvas. iPad/Safari bevarer inline SVG i PDF. */
+.printSvgLogo{
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 8px auto;
+  display: block;
+  line-height: 0;
+}
+.printSvgLogo svg{
+  width: 74px;
+  height: 74px;
+  display: block;
+}
+@media print{
+  .printSvgLogo,
+  .printSvgLogo svg{
+    display:block !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
