@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+
+<html lang="da">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Udtalelser v2.0</title>
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- Excel import (XLSX). CSV virker stadig uden denne. -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Cache-bust for GitHub Pages / aggressive browser caching -->
+<link href="app.css?v=2026-04-24_v2" rel="stylesheet"/>
+</head>
+<body>
+<header class="topbar no-print">
+<div class="brand" id="brandHome" title="Gå til Data & import">
+<span class="dot"></span>
+<span>Udtalelser v2.0</span>
+</div>
+<nav aria-label="Navigation" class="tabs">
+<button class="tab" data-tab="k" id="tab-k" title="K-elever">👤 <span>K-elever</span></button>
+<button class="tab" data-tab="edit" id="tab-edit" title="Redigér">✍️ <span>Redigér</span></button>
+<button class="tab" data-tab="set" id="tab-set" title="Indstillinger">⚙️ <span>Indstillinger</span></button>
+        <button class="tab tab-help" id="tab-help-top" title="Hjælp">? <span>Hjælp</span></button>
+</nav>
+<div class="status">
+<span class="statusText" id="statusText"></span>
+<button class="btn small no-print" id="btnReload">↻ Reload</button></div>
+</header>
+<main class="app">
+<!-- K-elever -->
+<section class="view" id="view-k">
+<div class="viewHeader">
+        <div class="viewTitleRow">
+          <button class="h1btn" id="kTitleBtn" type="button" title="Skift visning: K-elever ↔ Alle K-grupper"><h1 id="kTitle">K-elever</h1></button>
+          <div id="kTitleActions" class="titleCenter no-print">
+            <button class="btn small no-print" id="btnPrintAllK" type="button" title="Print alle dine K-elever som én samlet udskrift">🖨️ Print dine K-elever</button>
+          </div>
+          <div id="kTitleRight" class="titleRight no-print">
+            <div class="muted small" id="kHeaderInfo"></div>
+          </div>
+        </div>
+      </div>
+<div class="callout" id="kMessage">
+  <div class="kNavHost no-print" id="kNavHost">
+    <!-- K-gruppe-navigation (vises kun i ALL) -->
+    <div class="editNavRow" id="kAllNavRow" style="display:none;">
+      <div class="navSlot left">
+        <button class="btn small" id="btnPrevGroup" type="button" title="Forrige K-gruppe">◀︎</button>
+      </div>
+      <div class="navSlot center muted small" id="kAllNavLabel"></div>
+      <div class="navSlot right" id="kAllNavRight">
+        <button class="btn small" id="btnNextGroup" type="button" title="Næste K-gruppe">▶︎</button>
+      </div>
+    </div>
+  </div>
+  <div class="kMsgHost" id="kMsgHost"></div>
+</div>
+<div class="list" id="kList"></div>
+</section>
+<!-- Redigér -->
+<section class="view" id="view-edit">
+<div class="viewHeader no-print">
+<div class="viewTitleRow">
+  <div class="titleLeft"><h1>Redigér</h1></div>
+  <div class="titleCenter no-print" id="editTitleCenter">
+    <div class="pill muted" id="autosavePill"></div>
+    <button class="btn no-print" id="btnPrint">🖨️ Print elev</button>
+  </div>
+  <div class="titleRight no-print"><div class="muted small" id="editHeaderInfo"></div></div>
+</div>
+<div class="row gap wrap">
+  <div class="pill" id="editStudentPill">Ingen elev valgt</div>
+</div>
+</div>
+<div class="callout no-print" id="editMessage">
+  <div class="editNavRow no-print" id="editNavRow">
+    <div class="navSlot left">
+      <button class="btn small no-print" id="btnPrevStudent" type="button" title="Forrige elev">◀ Forrige</button>
+    </div>
+    <div class="navSlot center"></div>
+    <div class="navSlot right">
+      <button class="btn small no-print" id="btnNextStudent" type="button" title="Næste elev">Næste ▶</button>
+    </div>
+  </div>
+  <div class="muted" id="editHint"></div>
+</div>
+<div class="split">
+<div class="panel no-print">
+<details class="fold" open="" id="secElevudv">
+<summary>Udvikling <span class="secRatio" id="ratioElevudv"></span></summary>
+<textarea id="txtElevudv" placeholder="Skriv udvikling…" rows="8"></textarea>
+</details>
+<details class="fold" id="secPraktisk">
+<summary>Praktisk afsnit <span class="secRatio" id="ratioPraktisk"></span></summary>
+<textarea id="txtPraktisk" placeholder="Skriv praktisk afsnit…" rows="7"></textarea>
+</details>
+<details class="fold" id="secKgruppe">
+<summary>Funktion i kontaktgruppen <span class="secRatio" id="ratioKgruppe"></span></summary>
+<textarea id="txtKgruppe" placeholder="Skriv kontaktgruppe-afsnit…" rows="7"></textarea>
+</details>
+<div class="card no-print">
+<div class="cardTitle">Elevens eget input (PDF)</div>
+<div class="row gap wrap">
+  <input accept="application/pdf,.pdf" id="fileStudentInput" type="file" style="display:none" />
+  <button class="btn" id="btnPickStudentPdf" type="button">Vælg PDF…</button>
+  <button class="btn" id="btnOpenStudentInput" type="button" disabled>Åbn i nyt vindue</button>
+  <button class="btn ghost" id="btnClearStudentInput" type="button" disabled>Fjern</button>
+  <div class="muted small" id="studentInputMeta"></div>
+</div>
+<div class="studentInputPreviewWrap" id="studentInputPreviewWrap" style="display:none;">
+  <iframe id="studentInputPreview" title="Elevens eget input (PDF preview)"></iframe>
+</div>
+</div>
+</div>
+<div class="panel">
+<article class="preview" id="preview"></article>
+</div>
+</div>
+</section>
+<!-- Indstillinger -->
+<section class="view" id="view-set">
+  <div class="viewHeader">
+    <h1>Indstillinger</h1>
+    <p class="muted">Alt gemmes lokalt i denne browser (localStorage). Ingen server.</p>
+  </div>
+
+  <div class="subtabs no-print" id="settingsSubtabs" role="tablist" aria-label="Indstillinger">
+    <button class="subtab active" type="button" data-subtab="general" id="settingsTab-general">Generelt</button>
+    <button class="subtab" type="button" data-subtab="data" id="settingsTab-data">Import</button>
+    <button class="subtab" type="button" data-subtab="export" id="settingsTab-export">Eksport</button>
+    <button class="subtab" type="button" data-subtab="texts" id="settingsTab-texts">Tekster / skabeloner</button>
+    <button class="subtab" type="button" data-subtab="help" id="settingsTab-help">Hjælp</button>
+  </div>
+
+  <!-- GENERELT -->
+  <div class="settingsSubtab active" data-subtab="general" id="settingsSubtab-general">
+    <div class="grid2">
+      <div class="card">
+        <div class="cardTitle">Identitet</div>
+        <div class="field">
+          <label>K-lærer (initialer eller navn)</label>
+          <div class="teacherPicker" id="teacherPicker">
+            <input id="meInput" placeholder="fx MM, RD, MTP eller fuldt navn" type="text" autocomplete="off"/>
+            <button class="clearBtn" id="meInputClear" title="Ryd" aria-label="Ryd">×</button>
+            <button class="tpBtn" id="teacherPickerBtn" type="button" aria-label="Vis liste">
+              ▾
+            </button>
+            <div class="tpMenu" id="teacherPickerMenu" role="listbox" aria-label="Vælg K-lærer" hidden></div>
+          </div>
+          <div class="muted small" id="teacherInfoAfterImport" style="display:none; margin-top:6px;">
+            Vælg K-lærer for at se K-elever
+          </div>
+          <div class="muted small">Fortolkes via alias-map og bruges til filter af K-elever.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardTitle">Periode</div>
+        <div class="grid2 tight">
+          <div class="field">
+            <label>Skoleår (slut-år)</label>
+            <input id="schoolYearEnd" type="number" min="2020" max="2100"/>
+          </div>
+          <div class="field">
+            <label>Kontaktgruppe antal (auto)</label>
+            <input id="contactCount" type="text" readonly/>
+          </div>
+          <div class="field">
+            <label>Periode fra (auto)</label>
+            <input id="periodFrom" readonly type="text"/>
+          </div>
+          <div class="field">
+            <label>Dato måned/år (auto)</label>
+            <input id="dateMonthYear" readonly type="text"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="card dangerZone">
+        <div class="cardTitle">Sikkerhed</div>
+        <div style="margin-top:.35rem">
+          <button class="btn danger" id="btnReset" type="button">🔴 Nulstil app (slet alle lokale data)</button>
+          <div class="muted small" style="margin:.5rem 0 0 0; line-height:1.45">
+            Sletter alle elever, udtalelser, indstillinger og tekster i denne browser.<br/>
+            Handlingen kan ikke fortrydes.
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="importStatsCard">
+        <div class="cardTitle">Vurderinger importeret (faglærer-CSV)</div>
+        <div class="muted small" id="importStatsHint" style="margin-top:.35rem; line-height:1.45">
+          Viser om der er importeret vurderinger til eleverne i den aktive K-gruppe.
+        </div>
+
+        <div class="importStatsGrid" style="margin-top:.8rem">
+          <div class="importStatRow">
+            <div class="importStatLabel"><span class="importDot" id="dotSang" aria-hidden="true"></span>Sang</div>
+            <div class="importStatValue"><span id="importStatsSang">–</span><span class="importStatMiss muted" id="importMissSang"></span></div>
+            <button class="btn tiny" id="btnToggleMissingSang" type="button">Vis manglende</button>
+          </div>
+          <div class="importStatMissing muted small" id="importMissingSang" style="display:none"></div>
+
+          <div class="importStatRow">
+            <div class="importStatLabel"><span class="importDot" id="dotGym" aria-hidden="true"></span>Gymnastik</div>
+            <div class="importStatValue"><span id="importStatsGym">–</span><span class="importStatMiss muted" id="importMissGym"></span></div>
+            <button class="btn tiny" id="btnToggleMissingGym" type="button">Vis manglende</button>
+          </div>
+          <div class="importStatMissing muted small" id="importMissingGym" style="display:none"></div>
+
+          <div class="importStatRow">
+            <div class="importStatLabel"><span class="importDot" id="dotER" aria-hidden="true"></span>Elevråd</div>
+            <div class="importStatValue"><span id="importStatsElevraad">–</span><span class="importStatMiss muted" id="importMissER"></span></div>
+            <div class="importStatRight" id="importERMarked">Ingen markeret</div>
+          </div>
+          <div class="importStatMissing muted small" id="importMissingElevraad" style="display:none"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div class="settingsSubtab" data-subtab="data" id="settingsSubtab-data">
+    
+<div class="card">
+      <div class="cardTitle">Importér data</div>
+
+      <div class="muted small" style="margin:.2rem 0 .8rem 0; line-height:1.45">
+        Du kan enten indlæse en backup (JSON) eller indlæse elevlisten direkte fra Excel (.xlsx/.xls) eller CSV. Hvis du importerer backup, flettes indholdet ind, så du ikke mister dit eget arbejde.
+      </div>
+
+      <div class="row gap wrap" style="margin-bottom:.6rem">
+        <label class="btn" for="backupFileInput" title="Vælg backupfil">⬆️ Importér backup</label>
+        <input type="file" id="backupFileInput" accept="application/json" style="display:none" />
+
+        <label class="btn" for="studentsFile" title="Vælg elevliste">⬆️ Indlæs elevliste (Excel/CSV)</label>
+        <input accept=".xlsx,.xls,.csv,.txt" id="studentsFile" type="file" style="display:none"/>
+      </div>
+
+      <div class="row between" style="gap:1rem; align-items:flex-start; flex-wrap:wrap;">
+        <div style="min-width:260px; flex: 1 1 360px;">
+          <div class="muted small" id="studentsStatus" style="margin-top:.15rem"></div>
+        </div>
+        <div id="studentsWarn" class="warnBox" style="display:none; flex: 0 1 360px;"></div>
+      </div>
+
+      <details class="fold no-print" style="margin-top:.8rem">
+        <summary>Accepterede kolonner (eksempler)</summary>
+        <div class="muted small">
+          <div><b>Demo / standard-elevliste:</b> Fornavn, Efternavn, Unilogin, Køn, Klasse, Kontaktlærer1, Kontaktlærer2, Initialer for k-lærer1, Initialer for k-lærer2</div>
+
+          <div style="margin-top:.35rem"><b>Kontaktlærere og initialer:</b></div>
+          <ul style="margin:.25rem 0 0 1.1rem">
+            <li>I <i>Kontaktlærer1</i> og <i>Kontaktlærer2</i> kan du skrive kontaktlærerens navn (fx “Gert Hansen”).</li>
+            <li>Hvis der ikke er angivet initialer, danner appen dem automatisk (fx Gert Hansen → GH).</li>
+            <li>Hvis du vil bruge andre initialer, udfyld <i>Initialer for k-lærer1</i> / <i>Initialer for k-lærer2</i> (fx GTH). Disse overstyrer de automatiske initialer.</li>
+            <li>Kontaktlærer 2 og/eller initialer kan være tomme. Tomme felter ignoreres.</li>
+          </ul>
+
+          <div style="margin-top:.35rem"><em>Appen matcher kolonner robust (store/små bogstaver er ligegyldige, mellemrum trimmes, og kendte varianter accepteres).</em></div>
+          <div><b>Uni-C:</b> Klasse, Fornavn, Efternavn, Uni-C brugernavn, Relationer-Kontaktlærer-Navn, Relationer-Anden kontaktlærer-Navn</div>
+          <div>Appen mapper kolonner robust (case-insensitivt, trim, accepter Unilogin/Uni-C brugernavn).</div>
+        </div>
+      </details>
+
+      <div class="divider"></div>
+
+      <div class="cardSubTitle">Import af faglærer-CSV’er (for kontaktlærere)</div>
+      <div class="grid3">
+        <div class="field">
+          <label>sang_vurderinger.csv</label>
+          <input accept=".csv,.txt" id="importSang" type="file"/>
+        </div>
+        <div class="field">
+          <label>gym_rolle_vurderinger.csv</label>
+          <input accept=".csv,.txt" id="importGym" type="file"/>
+        </div>
+        <div class="field">
+          <label>elevraad_vurderinger.csv</label>
+          <input accept=".csv,.txt" id="importElevraad" type="file"/>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+    </div>
+  </div>
+
+  <!-- DATA & EKSPORT (FAGLÆRERE) -->
+  <div class="settingsSubtab" data-subtab="export" id="settingsSubtab-export">
+    <div class="card no-print">
+      <div class="row between exportTopRow" style="align-items:center; gap:1rem; margin-bottom:0">
+        <div class="cardTitle" style="margin:0">Eksport</div>
+        <div class="exportActions" aria-label="Eksport handlinger">
+          <button class="btn exportActionBtn" id="btnPrintAllStudents" type="button" title="Printer alle elever alfabetisk efter fornavn – uden hensyn til K-grupper.">🖨️ Print alle elever</button>
+          <button class="btn exportActionBtn" id="btnPrintAllGroups" type="button" title="Printer alle K-grupper på én gang. K-grupper sorteres alfabetisk efter K-lærer, og elever sorteres alfabetisk inden for hver gruppe.">🖨️ Print alle K-grupper</button>
+          <button class="btn exportActionBtn" id="btnBackupDownload" type="button" title="Download backup af alle lokale data">⬇️ Backup (download)</button>
+        </div>
+      </div>
+
+      <details class="fold exportHelpFold">
+  <summary>Del vurderinger med kontaktlærerne (CSV)</summary>
+  <div class="muted small" style="margin-top:.55rem; line-height:1.45">
+    <p><b>Når du deler vurderinger</b><br/>Her kan faglærere sende deres vurderinger videre, så kontaktlærerne kan skrive udtalelserne færdige.</p>
+    <ul style="margin:.35rem 0 .6rem 1.1rem">
+      <li><b>Sang</b> deler sangvurderinger (<code>sang_vurderinger.csv</code>)</li>
+      <li><b>Gymnastik</b> deler gymnastikvurderinger og roller samlet (<code>gym_rolle_vurderinger.csv</code>)</li>
+      <li><b>Elevråd</b> deler markering af elevrådsrepræsentant (<code>elevraad_vurderinger.csv</code>)</li>
+    </ul>
+    <p><b>Backup (noget andet)</b><br/>Backup bruges kun, hvis du vil gemme eller flytte <i>hele</i> dit arbejde – fx mellem lærere eller computere.</p>
+    <p style="margin:.35rem 0 0 0"><b>CSV = del vurderinger</b> · <b>Backup = gem det hele</b></p>
+  </div>
+</details>
+
+      <!-- Filtre/søgning hører visuelt sammen med tabellen. -->
+      <div class="marksToolbar" aria-label="Filtre til eksporttabellen">
+        <div class="tabs small centered" id="marksTypeTabs">
+          <!-- data-type values are internal codes used by app.js -->
+          <button type="button" class="tab" data-type="sang" title="Vurder elevernes deltagelse i sang og del det med kontaktlærerne.">Sang</button>
+          <button type="button" class="tab" data-type="gym" title="Vurder elevernes deltagelse i fællesgymnastik og del det med kontaktlærerne.">Gymnastik</button>
+          <button type="button" class="tab" data-type="roller" title="Marker elever med faste roller (fx fanebærer) og del det med kontaktlærerne.">Roller</button>
+          <button type="button" class="tab" data-type="elevraad" title="Marker elevrådsrepræsentant og del det med kontaktlærerne.">Elevråd</button>
+          <button type="button" class="tab exportTab" id="btnExportMarks" title="Eksporterer vurderinger fra den aktive fane som én CSV-fil">↓ Eksportér CSV</button>
+        </div>
+        <select id="marksType" style="display:none">
+          <option value="sang">Sang</option>
+          <option value="gym">Gymnastik</option>
+          <option value="roller">Roller</option>
+          <option value="elevraad">Elevråd</option>
+        </select>
+      </div>
+
+      <!-- hidden dock: ældre elev-søgepicker (beholdes skjult af hensyn til bagudkompatibilitet) -->
+      <div class="marksSearchDock" id="marksSearchDock" aria-hidden="true">
+        <div class="teacherPicker" id="marksSearchPicker">
+          <input id="marksSearch" type="text" placeholder="Søg navn…" autocomplete="off"/>
+          <button class="clearBtn" id="marksSearchClear" title="Ryd søgning" aria-label="Ryd søgning">×</button>
+          <button class="tpBtn" id="marksSearchBtn" type="button" aria-label="Vis elevliste">▾</button>
+          <div class="tpMenu" id="marksSearchMenu" role="listbox" aria-label="Vælg elev" hidden></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted small" id="marksLegend" style="margin:.35rem 0 .6rem 0"></div>
+      <div id="marksTableWrap"></div>
+    </div>
+  </div>
+
+  <div class="settingsSubtab" data-subtab="texts" id="settingsSubtab-texts">
+    <div class="grid2">
+      <div class="card">
+        <div class="cardTitle">Skole og skabelon</div>
+
+        <div class="field">
+          <label>Forstandernavn</label>
+          <div class="row gap">
+            <input id="forstanderName" type="text"/>
+            <button class="btn ghost" id="btnToggleForstander" title="Lås op / lås" type="button">✏️</button>
+          </div>
+        </div>
+
+        <details class="fold" id="schoolTextFold">
+          <summary>Skolens standardtekst</summary>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn ghost" id="btnToggleSchoolText" type="button">✏️ Redigér</button>
+            <button class="btn ghost" id="btnRestoreSchoolText" type="button">↩️ Gendan standard</button>
+          </div>
+          <textarea id="schoolText" rows="10"></textarea>
+        </details>
+
+        <details class="fold" id="templateFold">
+          <summary>Udtalelses-skabelon (med placeholders)</summary>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn ghost" id="btnToggleTemplate" type="button">✏️ Redigér</button>
+            <button class="btn ghost" id="btnRestoreTemplate" type="button">↩️ Gendan standard</button>
+          </div>
+          <textarea id="templateText" rows="14"></textarea>
+          <div class="muted small">Brug placeholders som <code>{{ELEV_FORNAVN}}</code>, <code>{{SANG_AFSNIT}}</code>, <code>{{PRAKTISK_AFSNIT}}</code> osv.</div>
+        </details>
+
+        <details class="fold" id="templatesShareFold">
+          <summary>Del / importér skabeloner (leder)</summary>
+          <div class="muted small" style="margin:.35rem 0 .6rem 0">
+            Gælder <b>Forstandernavn</b>, <b>Skolens standardtekst</b> og <b>Udtalelses-skabelon</b>. Download filen og del den med kolleger.
+          </div>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn" id="btnExportTemplates" type="button">⬇️ Download skabeloner</button>
+            <button class="btn ghost" id="btnImportTemplates" type="button">⬆️ Importér skabeloner</button>
+            <input id="fileImportTemplates" type="file" accept=".json" style="display:none"/>
+          </div>
+<div class="divider" style="margin:.75rem 0"></div>
+
+          <div class="muted small" style="margin:.35rem 0 .6rem 0">
+            <b>Test print-logo (lokalt)</b>: Vælg et logo her for at se det i udskrift – uden at ændre filer i appen. Kan fjernes igen.
+            <br/>
+            <span class="muted">Tip:</span> Brug et lille, bredt logo (fx ca. max <b>600×200 px</b>) med <b>transparent baggrund</b>.
+          </div>
+
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn ghost" id="btnPickPrintLogo" type="button" title="Vælg et logo til test i denne browser (gemmes lokalt)">🧪 Vælg test-logo…</button>
+            <button class="btn ghost" id="btnClearPrintLogo" type="button" title="Fjern test-logo (lokalt)" style="display:none">↩️ Fjern test-logo</button>
+            <input id="filePrintLogo" type="file" accept="image/png,image/svg+xml,.png,.svg" style="display:none"/>
+            <span class="muted small" id="printLogoStatus"></span>
+          </div>
+
+          <img id="printLogoPreview" alt="Test-logo preview" style="display:none; max-height:46px; max-width:100%; margin-top:.25rem; filter:none;" />
+        </details>
+      </div>
+
+      <div class="card no-print">
+        <div class="cardTitle">Faglærer-tekster (snippets)</div>
+        <div class="muted small" style="margin-bottom:.5rem">
+          Redigér tekster direkte her. Når du klikker “Download ændringer”, får du en fil du kan sende til Måns.
+        </div>
+
+        <details>
+          <summary><b>Sang</b> (3 niveauer)</summary>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn" id="btnDownloadSang" type="button">⬇️ Download ændringer</button>
+            <button class="btn ghost" id="btnImportSang" type="button">⬆️ Importér ændringer</button>
+            <button class="btn ghost" id="btnRestoreSang" type="button">↩️ Gendan standard</button>
+            <input id="fileImportSang" type="file" accept=".json" style="display:none"/>
+          </div>
+
+          <div class="field">
+            <label>Niveau 1 – titel</label>
+            <input id="sangLabel_S1" type="text"/>
+          </div>
+          <div class="field">
+            <label>Niveau 1 – tekst</label>
+            <textarea id="sangText_S1" rows="4"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Niveau 2 – titel</label>
+            <input id="sangLabel_S2" type="text"/>
+          </div>
+          <div class="field">
+            <label>Niveau 2 – tekst</label>
+            <textarea id="sangText_S2" rows="4"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Niveau 3 – titel</label>
+            <input id="sangLabel_S3" type="text"/>
+          </div>
+          <div class="field">
+            <label>Niveau 3 – tekst</label>
+            <textarea id="sangText_S3" rows="4"></textarea>
+          </div>
+        </details>
+
+        <details>
+          <summary><b>Gymnastik</b> (3 niveauer)</summary>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn" id="btnDownloadGym" type="button">⬇️ Download ændringer</button>
+            <button class="btn ghost" id="btnImportGym" type="button">⬆️ Importér ændringer</button>
+            <button class="btn ghost" id="btnRestoreGym" type="button">↩️ Gendan standard</button>
+            <input id="fileImportGym" type="file" accept=".json" style="display:none"/>
+          </div>
+
+          <div class="field">
+            <label>Niveau 1 – titel</label>
+            <input id="gymLabel_G1" type="text"/>
+          </div>
+          <div class="field">
+            <label>Niveau 1 – tekst</label>
+            <textarea id="gymText_G1" rows="4"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Niveau 2 – titel</label>
+            <input id="gymLabel_G2" type="text"/>
+          </div>
+          <div class="field">
+            <label>Niveau 2 – tekst</label>
+            <textarea id="gymText_G2" rows="4"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Niveau 3 – titel</label>
+            <input id="gymLabel_G3" type="text"/>
+          </div>
+          <div class="field">
+            <label>Niveau 3 – tekst</label>
+            <textarea id="gymText_G3" rows="4"></textarea>
+          </div>
+
+        </details>
+
+        
+        <details>
+          <summary><b>Roller</b> (Gymnastik – særlige roller)</summary>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn" id="btnDownloadRoller" type="button">⬇️ Download ændringer</button>
+            <button class="btn ghost" id="btnImportRoller" type="button">⬆️ Importér ændringer</button>
+            <button class="btn ghost" id="btnRestoreRoller" type="button">↩️ Gendan standard</button>
+            <input id="fileImportRoller" type="file" accept=".json" style="display:none"/>
+          </div>
+          <div class="muted small" style="margin-bottom:.5rem">Rollenavne er faste. Du kan kun redigere teksten.</div>
+          <div id="rolesList"></div>
+        </details>
+
+        <details>
+          <summary><b>Elevråd</b></summary>
+          <div class="row gap wrap" style="margin:.5rem 0">
+            <button class="btn" id="btnDownloadElevraad" type="button">⬇️ Download ændringer</button>
+            <button class="btn ghost" id="btnImportElevraad" type="button">⬆️ Importér ændringer</button>
+            <button class="btn ghost" id="btnRestoreElevraad" type="button">↩️ Gendan standard</button>
+            <input id="fileImportElevraad" type="file" accept=".json" style="display:none"/>
+          </div>
+
+          <div class="field">
+            <label>Tekst</label>
+            <textarea id="elevraadText" rows="6"></textarea>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- HJÆLP -->
+  <div class="settingsSubtab" data-subtab="help" id="settingsSubtab-help">
+    <div class="card">
+      <h2>Hjælp</h2>
+      <p class="muted">Kort og praktisk – uden server, uden login. Alt gemmes lokalt i din browser.</p>
+<details class="fold" open>
+        <summary>Quick start – sådan bruger I appen</summary>
+        <ol class="helpList">
+          <li>
+            Indlæs elevlisten (<code>students.csv</code>).
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="set:data">Import 🔗</a></span>
+          </li>
+          <li>
+            Angiv dine initialer.
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="set:general">Generelt 🔗</a></span>
+          </li>
+          <li>
+            Se og vælg elever.
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="k">K-elever 🔗</a></span>
+          </li>
+          <li>
+            Skriv og redigér udtalelser.
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="edit">Redigér 🔗</a></span>
+          </li>
+          <li>
+            Faglærere: sæt krydser og eksportér vurderinger.
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="set:export">Eksport 🔗</a></span>
+          </li>
+          <li>
+            Del eller flyt arbejdet.
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="set:data">Importér / gendan backup 🔗</a></span>
+          </li>
+          <li>
+            Tekster og skabeloner kan opdateres centralt.
+            <span class="helpRefs">– <a href="#" class="helpLink" data-goto="set:texts">Tekster / skabeloner 🔗</a></span>
+          </li>
+        </ol>
+      </details>
+      <details class="fold">
+        <summary>Mere hjælp og dokumentation (valgfrit)</summary>
+        <div class="helpDocLinks" style="margin-top:10px">
+          <p class="muted small" style="margin:0 0 10px 0">Ekstra materiale, hvis du vil have mere overblik eller flere detaljer.</p>
+
+          <p style="margin:6px 0"><strong>Udvidet guide (PDF):</strong>
+            <a href="docs/Udtalelser_Enkelhed_Sikkerhed.pdf" target="_blank" rel="noopener">Udtalelser v1.0 – Enkelhed og sikkerhed</a>
+          </p>
+          <p style="margin:6px 0"><strong>Infografik (PNG):</strong>
+            <a href="docs/infografik.png" target="_blank" rel="noopener">Hurtig guide (infografik)</a>
+          </p>
+          <p style="margin:6px 0"><strong>Kort video (MP4):</strong>
+            <a href="docs/En_praktisk_guide_til_Udtalelser.mp4" target="_blank" rel="noopener">En praktisk guide til Udtalelser</a>
+          </p>
+          <p style="margin:6px 0"><strong>Lyd (M4A):</strong>
+            <a href="docs/Stroemlin_sikre_elevudtalelser_lokalt.m4a" target="_blank" rel="noopener">Strømlin og sikre elevudtalelser lokalt</a>
+          </p>
+
+          <p class="muted small" style="margin:10px 0 0 0">Alle materialer ligger i mappen <code>/docs</code>.</p>
+
+          <hr style="margin:12px 0; opacity:.25;" />
+
+          <p style="margin:6px 0"><strong>Download appen som ZIP (valgfrit):</strong>
+            <a href="https://github.com/maans/udtalelser/archive/refs/heads/main.zip" target="_blank" rel="noopener">Hent en samlet kopi af appen</a>
+            <span class="muted small">(offline brug, arkiv eller deling)</span>
+          </p>
+        </div>
+      </details>
+
+
+      
+<details class="fold">
+  <summary>Demo</summary>
+  <div class="muted small" style="margin-top:.6rem; line-height:1.45">
+    <p><b>Indlæs demo-elevliste</b></p>
+    <p>Denne knap rydder <b>alle lokale data</b> (elever, udtalelser, indstillinger, tekster) og indlæser <code>demo_students.csv</code>.</p>
+    <p><b>Advarsel:</b> Handlingen kan ikke fortrydes. Tag evt. en <i>Backup (download)</i> først.</p>
+    <button class="btn warn" id="btnLoadDemo" type="button">Indlæs demo (overskriv alt)</button>
+  </div>
+</details>
+
+<details class="fold">
+        <summary>FAQ</summary>
+        <div class="muted small" style="margin-top:.6rem; line-height:1.45">
+          <p><b>Er der en server?</b><br/>Nej. Alt gemmes lokalt i din browser. Der sendes ingen data nogen steder.</p>
+          <p><b>Er det GDPR-sikkert?</b><br/>Ja. Ingen elevdata forlader computeren.</p>
+          <p><b>Kan jeg downloade appen?</b><br/>Ja. Appen kan bruges direkte i browseren, men kan også <a href="https://github.com/maans/udtalelser/archive/refs/heads/main.zip" target="_blank" rel="noopener">downloades som ZIP til offline brug, arkiv eller deling</a>.</p>
+          <p><b>Hvordan fjerner man en elev?</b><br/>Elever fjernes ved at genindlæse elevlisten (CSV) uden eleven. Appen har bevidst ingen slet-knap for enkelt-elever for at undgå utilsigtet datatab.</p>
+          <p><b>Kan flere lærere arbejde på de samme elever?</b><br/>Ja. Hvis du importerer en kollegas backup, kan appen vise, hvem der sidst har redigeret en elev.</p>
+          <p><b>Hvad hvis browseren crasher?</b><br/>Data gemmes løbende i browseren. Det anbefales at tage backup jævnligt.</p>
+          <p><b>Skal man printe direkte fra appen?</b><br/>Nej. Klik Print, luk printdialogen, og kopiér teksten over i skolens Word- eller Docs-skabelon. Print og underskriv dér.</p>
+</div>
+      </details>
+
+      
+      <details class="fold">
+        <summary>Deling (CSV og Backup)</summary>
+        <div class="muted small" style="margin-top:.6rem; line-height:1.45">
+          <pre class="asciiFlow">Faglærer
+   |
+   |  (Sang / Gymnastik / Elevråd)
+   v
+[ Udfyld vurderinger ]
+   |
+   v
+[ Eksportér CSV ]
+   |
+   v
+Kontaktlærer
+   |
+   v
+[ Importér CSV ]
+   |
+   v
+[ Skriv elevudtalelser ]</pre>
+          <div style="margin-top:.4rem"><b>CSV = del vurderinger</b> · <b>Backup = gem det hele</b></div>
+        </div>
+      </details>
+
+      
+      <div class="helpTip">
+        <p class="muted"><strong>Tip:</strong> Brug <a href="#" class="helpLink" data-goto="set:export"><em>Backup (download)</em></a> før du rydder lokale data eller skifter computer/browser.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="footer no-print">
+  <span class="muted small">Udtalelser v1.0</span>
+</footer>
+
+<!-- (K-lærer) – custom dropdown bygges i app.js -->
+
+<script src="app.js?v=2026-01-07_1"></script>
+<input type="file" id="importTemplatesInput" accept=".json" hidden>
+</body>
+</html>
