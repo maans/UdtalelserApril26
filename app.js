@@ -6,7 +6,7 @@ function resolveFullName(row) {
   return `${fn} ${en}`.trim();
 }
 
-/* Udtalelser v3.2 – statisk GitHub Pages app (ingen libs)
+/* Udtalelser v3.4 – statisk GitHub Pages app (ingen libs)
    localStorage prefix: udt_
 */
 (() => {
@@ -1160,7 +1160,7 @@ const docTitle = escapeHtml(title || 'Print');
 </head>
 <body class="${printModeClass}">
 <div class="printToolbar">
-  <button type="button" onclick="window.print()">🖨️ Print igen</button>
+  <button type="button" onclick="window.print()">🖨️ Print / PDF</button>
   <button type="button" onclick="window.close(); if(!window.closed){ history.back(); }">↩ Tilbage til appen</button>
 </div>
 ${pagesHtml}
@@ -1169,8 +1169,7 @@ ${pagesHtml}
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
   window.addEventListener('load', () => {
     // Give fonts/images a moment, then open print dialog.
-    setTimeout(() => { try { window.focus(); windoinjectPrintFitCssV32(w.document);
-      w.print(); } catch(e) {} }, 400);
+    setTimeout(() => { try { window.focus(); window.print(); } catch(e) {} }, 400);
   });
 })();
 </script>
@@ -1212,7 +1211,7 @@ async function printAllKStudents() {
     return;
   }
 
-  const title = isAll ? 'Udtalelser v3.2 – print K-gruppe' : 'Udtalelser v3.2 – print K-elever';
+  const title = isAll ? 'Udtalelser v3.4 – print K-gruppe' : 'Udtalelser v3.4 – print K-elever';
   const sorted = sortedStudents(list);
   await openPrintWindowForStudents(sorted, getSettings(), title);
 }
@@ -1274,7 +1273,7 @@ kGroups.forEach(g => {
     return;
   }
 
-  const title = 'Udtalelser v3.2 – print alle K-grupper';
+  const title = 'Udtalelser v3.4 – print alle K-grupper';
   // Brug samme printmotor som enkelt-elev / k-gruppe, så header (logo + dato) altid kommer med.
   // preserveOrder=true så vi ikke mister gruppe-ordenen ved intern sortering.
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
@@ -1300,7 +1299,7 @@ async function printAllStudents() {
     return coll.compare((a.efternavn || '').trim(), (b.efternavn || '').trim());
   });
 
-  const title = 'Udtalelser v3.2 – print alle elever';
+  const title = 'Udtalelser v3.4 – print alle elever';
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
 }
 
@@ -5993,29 +5992,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-/* v3.2 dynamic print-fit CSS fallback */
-const PRINT_FIT_CSS_V32 = `
-@page { size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }
-html,body{margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important;color:#000!important;}
-.signatures{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;margin-top:10pt!important;page-break-inside:avoid!important;break-inside:avoid!important;font-size:9.4pt!important;line-height:1.15!important;}
-.printPage,.print-page,.statement,.printDocument,.print-doc{box-sizing:border-box!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;font-size:9.7pt!important;line-height:1.24!important;page-break-inside:avoid;break-inside:avoid;}
-.printPage:not(:last-child),.print-page:not(:last-child),.statement:not(:last-child){page-break-after:always;break-after:page;}
-.printPage:last-child,.print-page:last-child,.statement:last-child{page-break-after:auto!important;break-after:auto!important;}
-p{margin-top:0!important;margin-bottom:5.2pt!important;line-height:1.24!important;}
-h1,h2{margin-top:0!important;margin-bottom:6pt!important;line-height:1.15!important;}
-.printLogo,.print-header-logo,img.printLogo,img.print-header-logo,.logo img,.printHeader img{max-width:54px!important;max-height:54px!important;width:auto!important;height:auto!important;margin:0 auto 5pt auto!important;display:block!important;}
-.printHeader,.print-header,.header{margin-top:0!important;margin-bottom:8pt!important;}
-.signatures td,.signatureTable td,.printSignature td{padding-top:0!important;padding-bottom:0!important;line-height:1.15!important;}
-.no-print,.printWindowBar,.printOverlayBar,.printToolbar,button{display:none!important;}
-`;
-function injectPrintFitCssV32(doc){
-  try{
-    if(!doc) return;
-    const style = doc.createElement('style');
-    style.setAttribute('data-print-fit','v32');
-    style.textContent = PRINT_FIT_CSS_V32;
-    doc.head.appendChild(style);
-  }catch(e){}
-}
-
