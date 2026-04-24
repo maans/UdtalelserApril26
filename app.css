@@ -967,3 +967,36 @@ textarea:focus,input:focus,select:focus,button:focus-visible{
   }
   .card,.fold,.callout{box-shadow:none !important;}
 }
+
+
+/* ---------- Print-preview overlay (v2.5) ---------- */
+.printOverlay[hidden]{display:none!important}
+.printOverlay{
+  position:fixed; inset:0; z-index:99999;
+  background:rgba(0,0,0,.72); backdrop-filter:blur(8px);
+  padding:clamp(10px,2vw,24px);
+  display:flex; align-items:center; justify-content:center;
+}
+.printOverlayShell{
+  width:min(1120px,96vw); height:min(940px,94vh);
+  background:#10131a; border:1px solid rgba(255,255,255,.16);
+  border-radius:18px; box-shadow:0 24px 80px rgba(0,0,0,.55);
+  overflow:hidden; display:flex; flex-direction:column;
+}
+.printOverlayBar{
+  min-height:58px; display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:10px 12px 10px 16px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);
+}
+.printOverlayTitle{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.printOverlayActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.printFrame{flex:1;width:100%;min-height:0;border:0;background:white}
+@media (max-width:700px){
+  .printOverlay{padding:0}
+  .printOverlayShell{width:100vw;height:100vh;border-radius:0;border:0}
+  .printOverlayBar{align-items:flex-start;flex-direction:column}
+  .printOverlayActions{width:100%;justify-content:space-between}
+  .printOverlayActions .btn{flex:1}
+}
+@media print{.printOverlay{display:none!important}}
