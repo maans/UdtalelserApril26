@@ -967,10 +967,29 @@ function openPrintPreviewOverlay(printHtml, title) {
     try { frame.removeAttribute('srcdoc'); } catch(_) {}
   };
 
-  const printFrame = () => {
+  const printFrame = async () => {
     try {
       const w = frame.contentWindow;
       if (!w) return;
+      try {
+        if (w.document && w.document.fonts && w.document.fonts.ready) await w.document.fonts.ready;
+      } catch(_) {}
+      try {
+        if (w.__printAssetsReady && typeof w.__printAssetsReady.then === 'function') await w.__printAssetsReady;
+      } catch(_) {}
+      try {
+        const imgs = Array.from(w.document ? w.document.images : []);
+        await Promise.all(imgs.map(img => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          if (img.decode) return img.decode().catch(() => {});
+          return new Promise(resolve => {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+            setTimeout(resolve, 1200);
+          });
+        }));
+      } catch(_) {}
+      await new Promise(resolve => setTimeout(resolve, 500));
       w.focus();
       w.print();
     } catch(e) {
@@ -1064,6 +1083,29 @@ async function openPrintWindowForStudents(students, settings, title) {
       }
     } catch(e) {}
 
+    // Ekstra oprydning: fjern evt. gammel navnelinje, der kun indeholder kontaktlærere/forstander,
+    // så der ikke kommer dobbeltsignatur i print-previewet.
+    try {
+      const tmpKontaktNavn = [st.kontaktlaerer1, st.kontaktlaerer2]
+        .filter(x => (x || '').toString().trim())
+        .map(x => (x || '').toString().trim())
+        .join(' & ');
+      const tmpForstanderNavn = (((settings && (settings.forstanderName || settings.forstanderNavn)) || 'Stinne Krogh Poulsen') + '').trim();
+      const lines2 = String(bodyForPre || '').split('\n');
+      while (lines2.length && !String(lines2[lines2.length - 1] || '').trim()) lines2.pop();
+      const tail = lines2.slice(-4).join(' ').replace(/\s+/g, ' ').trim();
+      if (tail && tmpForstanderNavn && tail.includes(tmpForstanderNavn)) {
+        while (lines2.length) {
+          const ln = String(lines2[lines2.length - 1] || '').trim();
+          if (!ln || ln.includes(tmpForstanderNavn) || (tmpKontaktNavn && ln.includes(tmpKontaktNavn)) || /kontaktlærer|kontaktlaerer|forstander/i.test(ln)) {
+            lines2.pop();
+          } else break;
+        }
+        while (lines2.length && !String(lines2[lines2.length - 1] || '').trim()) lines2.pop();
+        bodyForPre = lines2.join('\n');
+      }
+    } catch(e) {}
+
     const kontaktNavn = [st.kontaktlaerer1, st.kontaktlaerer2]
       .filter(x => (x || '').toString().trim())
       .map(x => (x || '').toString().trim())
@@ -1093,7 +1135,7 @@ async function openPrintWindowForStudents(students, settings, title) {
     return `
       <section class="page">
         <div class="printDate">${escapeHtml(headerDateText)}</div>
-        <div class="logoBox"><img src="${logoSrc}" alt="Himmerlands Efterskole"></div>
+        <div class="logoBox"><img src="${logoSrc}" alt="Himmerlands Efterskole"><canvas class="logoCanvas" width="219" height="220" aria-hidden="true"></canvas></div>
         <h1 class="printTitle">${escapeHtml(titleLine)}</h1>
         <pre class="statement">${escapeHtml(bodyForPre)}</pre>
         ${signatureHtml}
@@ -1133,13 +1175,15 @@ async function openPrintWindowForStudents(students, settings, title) {
     margin: 0 0 7mm 0;
     line-height: 0;
   }
-  .logoBox img {
+  .logoBox img,
+  .logoCanvas {
     width: 24mm;
     height: 24mm;
     object-fit: contain;
     display: inline-block;
     border: 0;
   }
+  .logoCanvas { display: none; }
   .printTitle {
     text-align: center;
     font-size: 12pt;
@@ -1186,6 +1230,10 @@ async function openPrintWindowForStudents(students, settings, title) {
   @media print {
     html, body { width: auto; height: auto; }
     .page { overflow: visible; }
+    /* iPad/Safari kan nogle gange vise data-url-billeder i HTML-preview, men udelade dem i PDF-print.
+       Derfor tegnes logoet også på canvas, og print bruger canvas-versionen. */
+    .logoBox img { display: none !important; }
+    .logoCanvas { display: inline-block !important; }
     .signatureTable { display: table !important; }
     .signatureTable tr { display: table-row !important; }
     .signatureTable td { display: table-cell !important; }
@@ -1194,6 +1242,34 @@ async function openPrintWindowForStudents(students, settings, title) {
 </head>
 <body>
 ${pagesHtml}
+
+<script>
+(function(){
+  var logoSrc = ${JSON.stringify(logoSrc)};
+  function drawLogos(){
+    return new Promise(function(resolve){
+      try{
+        var canvases = Array.prototype.slice.call(document.querySelectorAll('.logoCanvas'));
+        if (!canvases.length) return resolve();
+        var img = new Image();
+        img.onload = function(){
+          canvases.forEach(function(c){
+            try{
+              var ctx = c.getContext('2d');
+              ctx.clearRect(0,0,c.width,c.height);
+              ctx.drawImage(img,0,0,c.width,c.height);
+            }catch(e){}
+          });
+          resolve();
+        };
+        img.onerror = function(){ resolve(); };
+        img.src = logoSrc;
+      }catch(e){ resolve(); }
+    });
+  }
+  window.__printAssetsReady = drawLogos();
+})();
+</script>
 
 </body>
 </html>`;
@@ -1227,7 +1303,7 @@ async function printAllKStudents() {
     return;
   }
 
-  const title = isAll ? 'Udtalelser v2.5 – print K-gruppe' : 'Udtalelser v2.5 – print K-elever';
+  const title = isAll ? 'Udtalelser v2.6 – print K-gruppe' : 'Udtalelser v2.6 – print K-elever';
   const sorted = sortedStudents(list);
   await openPrintWindowForStudents(sorted, getSettings(), title);
 }
@@ -1289,7 +1365,7 @@ kGroups.forEach(g => {
     return;
   }
 
-  const title = 'Udtalelser v2.5 – print alle K-grupper';
+  const title = 'Udtalelser v2.6 – print alle K-grupper';
   // Brug samme printmotor som enkelt-elev / k-gruppe, så header (logo + dato) altid kommer med.
   // preserveOrder=true så vi ikke mister gruppe-ordenen ved intern sortering.
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
@@ -1315,7 +1391,7 @@ async function printAllStudents() {
     return coll.compare((a.efternavn || '').trim(), (b.efternavn || '').trim());
   });
 
-  const title = 'Udtalelser v2.5 – print alle elever';
+  const title = 'Udtalelser v2.6 – print alle elever';
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
 }
 
