@@ -6,7 +6,7 @@ function resolveFullName(row) {
   return `${fn} ${en}`.trim();
 }
 
-/* Udtalelser v3.4 – statisk GitHub Pages app (ingen libs)
+/* Udtalelser v3.5 – statisk GitHub Pages app (ingen libs)
    localStorage prefix: udt_
 */
 (() => {
@@ -1211,7 +1211,7 @@ async function printAllKStudents() {
     return;
   }
 
-  const title = isAll ? 'Udtalelser v3.4 – print K-gruppe' : 'Udtalelser v3.4 – print K-elever';
+  const title = isAll ? 'Udtalelser v3.5 – print K-gruppe' : 'Udtalelser v3.5 – print K-elever';
   const sorted = sortedStudents(list);
   await openPrintWindowForStudents(sorted, getSettings(), title);
 }
@@ -1273,7 +1273,7 @@ kGroups.forEach(g => {
     return;
   }
 
-  const title = 'Udtalelser v3.4 – print alle K-grupper';
+  const title = 'Udtalelser v3.5 – print alle K-grupper';
   // Brug samme printmotor som enkelt-elev / k-gruppe, så header (logo + dato) altid kommer med.
   // preserveOrder=true så vi ikke mister gruppe-ordenen ved intern sortering.
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
@@ -1299,7 +1299,7 @@ async function printAllStudents() {
     return coll.compare((a.efternavn || '').trim(), (b.efternavn || '').trim());
   });
 
-  const title = 'Udtalelser v3.4 – print alle elever';
+  const title = 'Udtalelser v3.5 – print alle elever';
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
 }
 

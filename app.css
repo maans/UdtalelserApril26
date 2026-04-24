@@ -895,3 +895,165 @@ body.udt-readonly main.app{
 .printOverlayBar button {
   white-space: nowrap;
 }
+
+
+/* =========================================================
+   v3.5 – A4 print-tuning uden klipning
+   Ligger sidst og overskriver tidligere printregler.
+   ========================================================= */
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  .printWindowBar button,
+  .printToolbar button,
+  .printOverlayBar button {
+    display: none !important;
+  }
+
+  /*
+    A4 er 210mm x 297mm.
+    Vi giver dokumentet et reelt A4-arbejdsfelt:
+    210 - 2*12 = 186mm bredde.
+    Højden får ikke overflow:hidden, så lange udtalelser må fortsætte.
+  */
+  .printPage,
+  .print-page,
+  .statement,
+  .printDocument,
+  .print-doc,
+  article.printPage,
+  article.print-page {
+    box-sizing: border-box !important;
+    width: 186mm !important;
+    max-width: 186mm !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 8mm auto 8mm auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+
+    font-size: 9.15pt !important;
+    line-height: 1.17 !important;
+
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .printPage:not(:last-child),
+  .print-page:not(:last-child),
+  .statement:not(:last-child),
+  article.printPage:not(:last-child),
+  article.print-page:not(:last-child) {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .printPage:last-child,
+  .print-page:last-child,
+  .statement:last-child,
+  article.printPage:last-child,
+  article.print-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  p,
+  .printPage p,
+  .print-page p,
+  .statement p,
+  article p {
+    margin-top: 0 !important;
+    margin-bottom: 3.2pt !important;
+    line-height: 1.17 !important;
+  }
+
+  h1,
+  h2,
+  .printPage h1,
+  .printPage h2,
+  .print-page h1,
+  .print-page h2,
+  .statement h1,
+  .statement h2,
+  article h1,
+  article h2 {
+    margin-top: 0 !important;
+    margin-bottom: 4pt !important;
+    line-height: 1.1 !important;
+  }
+
+  .printHeader,
+  .print-header,
+  .header {
+    margin-top: 0 !important;
+    margin-bottom: 5pt !important;
+    padding: 0 !important;
+  }
+
+  .printLogo,
+  .print-header-logo,
+  img.printLogo,
+  img.print-header-logo,
+  .logo img,
+  .printHeader img,
+  .print-header img {
+    max-width: 48px !important;
+    max-height: 48px !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 auto 3pt auto !important;
+    display: block !important;
+  }
+
+  .dateLine,
+  .printDate,
+  .date {
+    margin: 0 0 3pt 0 !important;
+  }
+
+  .signatures,
+  .signatureTable,
+  .printSignature {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+
+    margin-top: 6pt !important;
+    padding-top: 0 !important;
+
+    font-size: 8.8pt !important;
+    line-height: 1.1 !important;
+
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .signatures td,
+  .signatureTable td,
+  .printSignature td {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    line-height: 1.1 !important;
+  }
+}
+
