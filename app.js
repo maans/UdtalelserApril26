@@ -935,29 +935,109 @@ function syncPrintLogoTestUI() {
 
 
 
-// v2.5: Print-preview i samme app i stedet for ny fane/vindue.
-// Det løser især desktop/PWA-problemet, hvor man ellers ikke kan komme tilbage til appen.
+
+// v2.8: Print-preview i samme app, men selve PDF-printet sker fra hoveddokumentet.
+// iPad/Safari printer iframe/srcdoc ustabilt (blanke sider, manglende SVG/img), især ved K-grupper.
+// Derfor bruges iframe kun som forhåndsvisning. Når der printes, kopieres print-indholdet til
+// et skjult print-root i samme dokument og window.print() kaldes dérfra.
+let __lastPrintHtml = '';
+let __lastPrintTitle = '';
+
+function ensureSameDocumentPrintRoot() {
+  let style = document.getElementById('sameDocPrintIsolationStyle');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'sameDocPrintIsolationStyle';
+    style.textContent = [
+      '#sameDocPrintRoot { display: none; }',
+      '@media print {',
+      '  body.sameDocPrinting > *:not(#sameDocPrintRoot):not(#sameDocPrintIsolationStyle):not(#sameDocPrintDocumentStyle) { display: none !important; }',
+      '  body.sameDocPrinting #sameDocPrintRoot { display: block !important; visibility: visible !important; background: #fff !important; color: #000 !important; }',
+      '  body.sameDocPrinting { background: #fff !important; color: #000 !important; }',
+      '}'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  let docStyle = document.getElementById('sameDocPrintDocumentStyle');
+  if (!docStyle) {
+    docStyle = document.createElement('style');
+    docStyle.id = 'sameDocPrintDocumentStyle';
+    document.head.appendChild(docStyle);
+  }
+
+  let root = document.getElementById('sameDocPrintRoot');
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'sameDocPrintRoot';
+    document.body.appendChild(root);
+  }
+  return { root, docStyle };
+}
+
+function installSameDocumentPrint(printHtml) {
+  const { root, docStyle } = ensureSameDocumentPrintRoot();
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(String(printHtml || ''), 'text/html');
+  const styleText = Array.from(parsed.querySelectorAll('style')).map(s => s.textContent || '').join('\n');
+  const bodyClone = parsed.body ? parsed.body.cloneNode(true) : document.createElement('body');
+  Array.from(bodyClone.querySelectorAll('script')).forEach(s => s.remove());
+  docStyle.textContent = styleText + [
+    '',
+    '@media print {',
+    '  #sameDocPrintRoot .printOverlayBar, #sameDocPrintRoot .no-print { display:none !important; }',
+    '  #sameDocPrintRoot .page { page-break-after: always; break-after: page; }',
+    '  #sameDocPrintRoot .page:last-child { page-break-after: auto; break-after: auto; }',
+    '  #sameDocPrintRoot svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+    '}'
+  ].join('\n');
+  root.innerHTML = bodyClone.innerHTML;
+  forceInlineSvgLogoInDocument(document);
+  return root;
+}
+
+function cleanupSameDocumentPrintLater() {
+  const cleanup = () => {
+    document.body.classList.remove('sameDocPrinting');
+    const root = document.getElementById('sameDocPrintRoot');
+    if (root) root.style.display = 'none';
+  };
+  window.addEventListener('afterprint', cleanup, { once: true });
+  setTimeout(() => {
+    if (document.body.classList.contains('sameDocPrinting')) cleanup();
+  }, 5000);
+}
+
+function printSameDocument(printHtml) {
+  try {
+    const root = installSameDocumentPrint(printHtml || __lastPrintHtml);
+    root.style.display = 'block';
+    document.body.classList.add('sameDocPrinting');
+    cleanupSameDocumentPrintLater();
+    setTimeout(() => window.print(), 80);
+  } catch(e) {
+    console.error(e);
+    alert('Kunne ikke starte print. Prøv at genindlæse siden.');
+  }
+}
+
 function openPrintPreviewOverlay(printHtml, title) {
+  __lastPrintHtml = String(printHtml || '');
+  __lastPrintTitle = String(title || 'Print-preview');
+  try { installSameDocumentPrint(__lastPrintHtml); } catch(e) { console.warn(e); }
+
   const overlay = document.getElementById('printOverlay');
   const frame = document.getElementById('printFrame');
   const closeBtn = document.getElementById('btnClosePrintOverlay');
   const printAgainBtn = document.getElementById('btnPrintOverlayAgain');
   const titleEl = document.getElementById('printOverlayTitle');
 
-  // Fallback til ny fane hvis overlay ikke findes (fx gammel index.html i cache).
   if (!overlay || !frame) {
-    const win = window.open('', '_blank');
-    if (!win) {
-      alert('Kunne ikke åbne print-preview. Prøv at genindlæse siden.');
-      return;
-    }
-    win.document.open();
-    win.document.write(printHtml);
-    win.document.close();
+    printSameDocument(__lastPrintHtml);
     return;
   }
 
-  if (titleEl) titleEl.textContent = title || 'Print-preview';
+  if (titleEl) titleEl.textContent = __lastPrintTitle;
   overlay.hidden = false;
   overlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('printOverlayOpen');
@@ -969,47 +1049,15 @@ function openPrintPreviewOverlay(printHtml, title) {
     try { frame.removeAttribute('srcdoc'); } catch(_) {}
   };
 
-  const printFrame = async () => {
-    try {
-      const w = frame.contentWindow;
-      if (!w) return;
-      try {
-        if (w.document && w.document.fonts && w.document.fonts.ready) await w.document.fonts.ready;
-      } catch(_) {}
-      try {
-        if (w.__printAssetsReady && typeof w.__printAssetsReady.then === 'function') await w.__printAssetsReady;
-      } catch(_) {}
-      try {
-        const imgs = Array.from(w.document ? w.document.images : []);
-        await Promise.all(imgs.map(img => {
-          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-          if (img.decode) return img.decode().catch(() => {});
-          return new Promise(resolve => {
-            img.addEventListener('load', resolve, { once: true });
-            img.addEventListener('error', resolve, { once: true });
-            setTimeout(resolve, 1200);
-          });
-        }));
-      } catch(_) {}
-      await new Promise(resolve => setTimeout(resolve, 500));
-      w.focus();
-      forceInlineSvgLogoInDocument(w.document);
-      w.print();
-    } catch(e) {
-      alert('Kunne ikke starte print fra previewet. Prøv “Print igen” eller genindlæs siden.');
-    }
-  };
-
   if (closeBtn && !closeBtn.__wiredPrintOverlay) {
     closeBtn.__wiredPrintOverlay = true;
     closeBtn.addEventListener('click', closeOverlay);
   }
   if (printAgainBtn && !printAgainBtn.__wiredPrintOverlay) {
     printAgainBtn.__wiredPrintOverlay = true;
-    printAgainBtn.addEventListener('click', printFrame);
+    printAgainBtn.addEventListener('click', () => printSameDocument(__lastPrintHtml));
   }
 
-  // Escape lukker også overlayet.
   if (!overlay.__wiredEsc) {
     overlay.__wiredEsc = true;
     document.addEventListener('keydown', (ev) => {
@@ -1017,11 +1065,10 @@ function openPrintPreviewOverlay(printHtml, title) {
     });
   }
 
-  // srcdoc fungerer stabilt i moderne Safari/Chrome/Edge og holder alt i samme app.
   frame.onload = () => {
-    setTimeout(printFrame, 450);
+    setTimeout(() => printSameDocument(__lastPrintHtml), 250);
   };
-  frame.srcdoc = printHtml;
+  frame.srcdoc = __lastPrintHtml;
 }
 
 async function openPrintWindowForStudents(students, settings, title) {
@@ -1138,7 +1185,7 @@ async function openPrintWindowForStudents(students, settings, title) {
     return `
       <section class="page">
         <div class="printDate">${escapeHtml(headerDateText)}</div>
-        <div class="logoBox"><img src="${logoSrc}" alt="Himmerlands Efterskole"><canvas class="logoCanvas" width="219" height="220" aria-hidden="true"></canvas></div>
+        <div class="logoBox">${PRINT_INLINE_SVG_LOGO}</div>
         <h1 class="printTitle">${escapeHtml(titleLine)}</h1>
         <pre class="statement">${escapeHtml(bodyForPre)}</pre>
         ${signatureHtml}
@@ -1178,15 +1225,9 @@ async function openPrintWindowForStudents(students, settings, title) {
     margin: 0 0 7mm 0;
     line-height: 0;
   }
-  .logoBox img,
-  .logoCanvas {
-    width: 24mm;
-    height: 24mm;
-    object-fit: contain;
-    display: inline-block;
-    border: 0;
-  }
-  .logoCanvas { display: none; }
+  .printSvgLogo { width: 22mm; height: 22mm; margin: 0 auto; line-height: 0; display:block; }
+  .printSvgLogo svg { width: 22mm; height: 22mm; display:block; }
+  .logoBox .printSvgLogo { display: inline-block; }
   .printTitle {
     text-align: center;
     font-size: 12pt;
@@ -1233,10 +1274,7 @@ async function openPrintWindowForStudents(students, settings, title) {
   @media print {
     html, body { width: auto; height: auto; }
     .page { overflow: visible; }
-    /* iPad/Safari kan nogle gange vise data-url-billeder i HTML-preview, men udelade dem i PDF-print.
-       Derfor tegnes logoet også på canvas, og print bruger canvas-versionen. */
-    .logoBox img { display: none !important; }
-    .logoCanvas { display: inline-block !important; }
+    .printSvgLogo, .printSvgLogo svg { display:block !important; visibility:visible !important; }
     .signatureTable { display: table !important; }
     .signatureTable tr { display: table-row !important; }
     .signatureTable td { display: table-cell !important; }
@@ -1246,33 +1284,6 @@ async function openPrintWindowForStudents(students, settings, title) {
 <body>
 ${pagesHtml}
 
-<script>
-(function(){
-  var logoSrc = ${JSON.stringify(logoSrc)};
-  function drawLogos(){
-    return new Promise(function(resolve){
-      try{
-        var canvases = Array.prototype.slice.call(document.querySelectorAll('.logoCanvas'));
-        if (!canvases.length) return resolve();
-        var img = new Image();
-        img.onload = function(){
-          canvases.forEach(function(c){
-            try{
-              var ctx = c.getContext('2d');
-              ctx.clearRect(0,0,c.width,c.height);
-              ctx.drawImage(img,0,0,c.width,c.height);
-            }catch(e){}
-          });
-          resolve();
-        };
-        img.onerror = function(){ resolve(); };
-        img.src = logoSrc;
-      }catch(e){ resolve(); }
-    });
-  }
-  window.__printAssetsReady = drawLogos();
-})();
-</script>
 
 </body>
 </html>`;
@@ -1306,7 +1317,7 @@ async function printAllKStudents() {
     return;
   }
 
-  const title = isAll ? 'Udtalelser v2.7 – print K-gruppe' : 'Udtalelser v2.7 – print K-elever';
+  const title = isAll ? 'Udtalelser v2.8 – print K-gruppe' : 'Udtalelser v2.8 – print K-elever';
   const sorted = sortedStudents(list);
   await openPrintWindowForStudents(sorted, getSettings(), title);
 }
@@ -1368,7 +1379,7 @@ kGroups.forEach(g => {
     return;
   }
 
-  const title = 'Udtalelser v2.7 – print alle K-grupper';
+  const title = 'Udtalelser v2.8 – print alle K-grupper';
   // Brug samme printmotor som enkelt-elev / k-gruppe, så header (logo + dato) altid kommer med.
   // preserveOrder=true så vi ikke mister gruppe-ordenen ved intern sortering.
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
@@ -1394,7 +1405,7 @@ async function printAllStudents() {
     return coll.compare((a.efternavn || '').trim(), (b.efternavn || '').trim());
   });
 
-  const title = 'Udtalelser v2.7 – print alle elever';
+  const title = 'Udtalelser v2.8 – print alle elever';
   await openPrintWindowForStudents(all, getSettings(), title, { preserveOrder: true });
 }
 
