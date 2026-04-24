@@ -4,19 +4,18 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>Udtalelser v3.0</title>
+<title>Udtalelser v3.1</title>
 <link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="icon-192.png">
-<!-- Excel import (XLSX). CSV virker stadig uden denne. -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <!-- Cache-bust for GitHub Pages / aggressive browser caching -->
-<link href="app.css?v=2026-04-24_30" rel="stylesheet"/>
+<link href="app.css?v=2026-04-24_31" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <header class="topbar no-print">
 <div class="brand" id="brandHome" title="Gå til Data & import">
 <span class="dot"></span>
-<span>Udtalelser v3.0</span>
+<span>Udtalelser v3.1</span>
 </div>
 <nav aria-label="Navigation" class="tabs">
 <button class="tab" data-tab="k" id="tab-k" title="K-elever">👤 <span>K-elever</span></button>
@@ -229,7 +228,7 @@
       <div class="cardTitle">Importér data</div>
 
       <div class="muted small" style="margin:.2rem 0 .8rem 0; line-height:1.45">
-        Du kan enten indlæse en backup (JSON) eller indlæse elevlisten direkte fra Excel (.xlsx/.xls) eller CSV. Hvis du importerer backup, flettes indholdet ind, så du ikke mister dit eget arbejde.
+        Du kan enten indlæse en backup (JSON) eller indlæse elevlisten (Excel/CSV). Hvis du importerer backup, flettes indholdet ind, så du ikke mister dit eget arbejde.
       </div>
 
       <div class="row gap wrap" style="margin-bottom:.6rem">
@@ -566,7 +565,7 @@
           <p class="muted small" style="margin:0 0 10px 0">Ekstra materiale, hvis du vil have mere overblik eller flere detaljer.</p>
 
           <p style="margin:6px 0"><strong>Udvidet guide (PDF):</strong>
-            <a href="docs/Udtalelser_Enkelhed_Sikkerhed.pdf" target="_blank" rel="noopener">Udtalelser v3.0 – Enkelhed og sikkerhed</a>
+            <a href="docs/Udtalelser_Enkelhed_Sikkerhed.pdf" target="_blank" rel="noopener">Udtalelser v1.0 – Enkelhed og sikkerhed</a>
           </p>
           <p style="margin:6px 0"><strong>Infografik (PNG):</strong>
             <a href="docs/infografik.png" target="_blank" rel="noopener">Hurtig guide (infografik)</a>
@@ -607,7 +606,7 @@
           <p><b>Er der en server?</b><br/>Nej. Alt gemmes lokalt i din browser. Der sendes ingen data nogen steder.</p>
           <p><b>Er det GDPR-sikkert?</b><br/>Ja. Ingen elevdata forlader computeren.</p>
           <p><b>Kan jeg downloade appen?</b><br/>Ja. Appen kan bruges direkte i browseren, men kan også <a href="https://github.com/maans/udtalelser/archive/refs/heads/main.zip" target="_blank" rel="noopener">downloades som ZIP til offline brug, arkiv eller deling</a>.</p>
-          <p><b>Hvordan fjerner man en elev?</b><br/>Elever fjernes ved at genindlæse elevlisten (CSV) uden eleven. Appen har bevidst ingen slet-knap for enkelt-elever for at undgå utilsigtet datatab.</p>
+          <p><b>Hvordan fjerner man en elev?</b><br/>Elever fjernes ved at genindlæse elevlisten (Excel/CSV) uden eleven. Appen har bevidst ingen slet-knap for enkelt-elever for at undgå utilsigtet datatab.</p>
           <p><b>Kan flere lærere arbejde på de samme elever?</b><br/>Ja. Hvis du importerer en kollegas backup, kan appen vise, hvem der sidst har redigeret en elev.</p>
           <p><b>Hvad hvis browseren crasher?</b><br/>Data gemmes løbende i browseren. Det anbefales at tage backup jævnligt.</p>
           <p><b>Skal man printe direkte fra appen?</b><br/>Nej. Klik Print, luk printdialogen, og kopiér teksten over i skolens Word- eller Docs-skabelon. Print og underskriv dér.</p>
@@ -648,27 +647,12 @@ Kontaktlærer
 </section>
 </main>
 <footer class="footer no-print">
-  <span class="muted small">Udtalelser v3.0</span>
+  <span class="muted small">Udtalelser v1.0</span>
 </footer>
 
 <!-- (K-lærer) – custom dropdown bygges i app.js -->
 
-<script src="app.js?v=2026-04-24_30"></script>
+<script src="app.js?v=2026-04-24_31"></script>
 <input type="file" id="importTemplatesInput" accept=".json" hidden>
-
-<!-- Print-preview overlay: holder brugeren i appen i stedet for ny fane/vindue -->
-<div id="printOverlay" class="printOverlay no-print" hidden aria-hidden="true">
-  <div class="printOverlayShell" role="dialog" aria-modal="true" aria-label="Print-preview">
-    <div class="printOverlayBar">
-      <div class="printOverlayTitle" id="printOverlayTitle">Print-preview</div>
-      <div class="printOverlayActions">
-        <button class="btn ghost" id="btnPrintOverlayAgain" type="button">🖨️ Print igen</button>
-        <button class="btn" id="btnClosePrintOverlay" type="button">✕ Tilbage til appen</button>
-      </div>
-    </div>
-    <iframe id="printFrame" class="printFrame" title="Print-preview"></iframe>
-  </div>
-</div>
-
 </body>
 </html>
