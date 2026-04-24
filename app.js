@@ -974,20 +974,35 @@ async function openPrintWindowForStudents(students, settings, title) {
       bodyText = '';
     }
 
-    // Signature block: keep forstander-navn fast over "Forstander" (undgå at navne skubber hinanden)
+    // Signature block: make the printed footer real HTML columns instead of a preformatted line.
+    // Robust against older locally saved templates where the label may be "Kontaktlærere" or "Kontaktgruppelærere".
     let signatureHtml = '';
     let bodyForPre = bodyText;
     try {
       const lines = String(bodyText || '').split('\n');
-      let sigIdx = -1;
+      let sigLabelIdx = -1;
       for (let i = lines.length - 1; i >= 0; i--) {
-        const ln = lines[i] || '';
-        if (ln.includes('Kontaktlærere') && ln.includes('Forstander')) { sigIdx = i; break; }
+        const ln = String(lines[i] || '').trim();
+        const hasForstander = /forstander/i.test(ln);
+        const hasKontakt = /kontakt(lærere|gruppelærere)/i.test(ln);
+        if (hasForstander && hasKontakt) { sigLabelIdx = i; break; }
       }
-      if (sigIdx > 0) {
-        // Fjern signaturlinjerne fra pre-teksten (navne + labels)
-        let cutStart = sigIdx - 1;
+
+      // If the saved template has wrapped/clipped spacing, still treat the final "Forstander" label as a signature line.
+      if (sigLabelIdx < 0) {
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const ln = String(lines[i] || '').trim();
+          if (/forstander/i.test(ln)) { sigLabelIdx = i; break; }
+        }
+      }
+
+      if (sigLabelIdx > 0) {
+        // Remove the generated text-signature from the pre block: labels + previous non-empty name line(s).
+        let cutStart = sigLabelIdx;
         while (cutStart > 0 && !String(lines[cutStart - 1] || '').trim()) cutStart--;
+        if (cutStart > 0) cutStart--; // line with contact teacher names / forstander name from the template
+        while (cutStart > 0 && !String(lines[cutStart - 1] || '').trim()) cutStart--;
+
         const kept = lines.slice(0, cutStart);
         while (kept.length && !String(kept[kept.length - 1] || '').trim()) kept.pop();
         bodyForPre = kept.join('\n');
@@ -997,7 +1012,10 @@ async function openPrintWindowForStudents(students, settings, title) {
           .map(x => (x || '').toString().trim())
           .join(' & ');
 
-        const forstanderNavn = ((settings && settings.forstanderName) ? settings.forstanderName : '').toString().trim();
+        const forstanderNavn = (
+          (settings && (settings.forstanderName || settings.forstanderNavn)) ||
+          'Stinne Krogh Poulsen'
+        ).toString().trim();
 
         signatureHtml = `
           <div class="signatures">
@@ -1132,12 +1150,12 @@ const docTitle = escapeHtml(title || 'Print');
  
     @media print{
       /* Footer-signatur: fixed for enkelt-elev print, absolut pr. side ved multi-print (for at undgå overlappende fixed-elementer) */
-      body.print-single .signatures{ position: fixed; bottom: 32px; left: 0; right: 0; width: 100%; }
+      body.print-single .signatures{ position: fixed; bottom: 12mm; left: 14mm; right: 14mm; width: auto; }
       body.print-multi .page{ position: relative; }
       body.print-multi .content{ position: relative; min-height: 273mm; }
-      body.print-multi .signatures{ position: absolute; bottom: 32px; left: 0; right: 0; width: 100%; }
+      body.print-multi .signatures{ position: absolute; bottom: 12mm; left: 0; right: 0; width: 100%; }
       /* Sørg for at brødtekst aldrig kan løbe ned i signaturen */
-      pre.statement{ padding-bottom: 110px; }
+      pre.statement{ padding-bottom: 32mm; }
     }
 
     /* Giv Kontaktlærere mere plads end Forstander (2 navne vs 1) */
